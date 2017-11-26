@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Table</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="div-table"></div>
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/CustomTable.js"></script>
+    
+    <script>
+        var myData = new CustomTable({
+            idkey: 'string',
+            'name': 'string',
+            'age': 'number',
+        }, $("#div-table"));
+        myData.retrieveAll();
+    </script>
+</body>
+</html>
