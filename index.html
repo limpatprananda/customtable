@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Custom Table</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div id="myTable"></div>
-    <script src="js/jquery-3.2.1.min.js"></script>
-    <script src="js/CustomTable.js"></script>
+    <div class="container-fluid">
+        <h1>Custom Table</h1>
+        <div id="myTable"></div>
+    </div>
     
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/CustomTable.js"></script>
     <script>
         var myData = new CustomTable({
             idkey: 'string',
@@ -25,4 +30,5 @@
         myData.retrieveAll();
     </script>
 </body>
+
 </html>

@@ -46,11 +46,20 @@ CustomTable.prototype.draw = function(query = ""){
     var totalDrawData = 0;
     
     if(this.countDrawing == 0){
-        html += '<div id="' + this.idObj + '-divSearch"><input type="text" id="' + this.idObj + '-inputSearch" value=""/><div>';
-        html += '<div><button id="' + this.idObj + '-btnInsert">insert</button></div>';
+        html += '<div class="row">';
+            html += '<div class="col-sm-8">';
+                html += '<div><button id="' + this.idObj + '-btnInsert" class="btn btn-outline-primary">Insert new</button></div>';
+            html += '</div>';
+            html += '<div class="col-sm-4">';
+                html += '<div id="' + this.idObj + '-divSearch"><input type="text" id="' + this.idObj + '-inputSearch" class="form-control" value="" placeholder="Search..."/></div>';
+            html += '</div>';
+        html += '</div>';
+        
     }
-    html += '<div id="' + this.idObj + '-divTable">';
-    html += '<table>';
+    html += '<br>';
+    html += '<div class="row">';
+    html += '<div id="' + this.idObj + '-divTable" class="col-sm-12">';
+    html += '<table class="table table-bordered">';
             html += '<thead>';
                 html += '<tr>';
     
@@ -82,7 +91,8 @@ CustomTable.prototype.draw = function(query = ""){
                     }
                 }
             }
-            _tempHtml += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
+            _tempHtml += '<td><button class="btn-event-edit btn btn-outline-success">edit</button>&nbsp;';
+            _tempHtml +=      '<button class="btn-event-delete btn btn-outline-danger">delete</button></td>';
         _tempHtml += '</tr>';
         if(_isDrawRow){
             html += _tempHtml;
@@ -92,6 +102,7 @@ CustomTable.prototype.draw = function(query = ""){
             html += '</tbody>'
         html += '<table>';
         html += totalDrawData + ' of total ' + this.getListData().length + ' records';
+    html += '</div>';
     html += '</div>';
     
     if(this.countDrawing == 0){
@@ -127,10 +138,17 @@ function initEventCustom(obj){
             var columnType = obj.getListColumnType()[_property];
             var columnValue = cellElement.html();
             
-            html += '<td><label>' + columnType + '</label><br><input id="' + _property + '" type="text" value="' + columnValue + '"/></td>';
+            html += '<td>';
+                html += '<div class="form-group">';
+                    html += '<label for="">' + columnType + '</label>';
+                    html += '<input id="' + _property + '" type="text" value="' + columnValue + '" class="form-control"/>';
+                html += '</div>'
+            html += '</td>';
+            
             cellElement = cellElement.next();
         }
-        html += '<td><button id="activeCellSave">save</button><button id="activeCellCancel">cancel</button></td>';
+        html += '<td class="align-middle"><button id="activeCellSave" class="btn btn-outline-primary">save</button>&nbsp;';
+        html +=     '<button id="activeCellCancel" class="btn btn-outline-warning">cancel</button></td>';
         rowElement.html(html);
         
         $('#activeCellSave').click(function(e){
@@ -152,7 +170,8 @@ function initEventCustom(obj){
                     for(var _property in obj.getListColumnType()){
                         html += '<td>' + $('#' + _property).val() + '</td>';
                     }
-                    html += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
+                    html += '<td><button class="btn-event-edit btn btn-outline-success">edit</button>&nbsp;';
+                    html +=      '<button class="btn-event-delete btn btn-outline-danger">delete</button></td>';
                     rowElement.html(html);
                     obj.isStillEdit = false;
                 }
@@ -209,9 +228,18 @@ function initEventCustom(obj){
         var html = '<tr id="' + obj.idObj + '-insertFields">';
         for(var _property in obj.getListColumnType()){
             var columnType = obj.getListColumnType()[_property];
-            html += '<td><label>' + columnType + '</label><br><input id="' + _property + '" type="text" value=""/></td>';
+            
+            html += '<td>';
+                html += '<div class="form-group">';
+                    html += '<label for="">' + columnType + '</label>';
+                    html += '<input id="' + _property + '" type="text" value="" class="form-control"/>';
+                html += '</div>'
+            html += '</td>';
+            
+            
         }
-        html += '<td><button id="activeCellSave">save</button><button id="activeCellCancel">cancel</button></td></tr>';
+        html += '<td class="align-middle"><button id="activeCellSave" class="btn btn-outline-primary">save</button>&nbsp;';
+        html +=     '<button id="activeCellCancel" class="btn btn-outline-warning">cancel</button></td>';
         
         if(tbodyElement.is(':empty')){
             tbodyElement.html(html);
