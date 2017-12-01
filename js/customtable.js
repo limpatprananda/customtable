@@ -9,6 +9,8 @@ var CustomTable = function(listColumnType, obj){
     this.listColumnType = listColumnType;
     this.listData = [];
     this.idObj = obj.attr("id");
+    this.countDrawing = 0;
+    this.isStillEdit = false;
 };
 
 CustomTable.prototype.getListColumnType = function(){
@@ -39,8 +41,10 @@ CustomTable.prototype.retrieveAll = function(isDraw = true){
 
 CustomTable.prototype.draw = function(query = ""){
     var html = '';
+    var idObj = this.idObj;
+    var totalDrawData = 0;
     
-    if(query == ""){
+    if(this.countDrawing == 0){
         html += '<div id="' + this.idObj + '-divSearch"><input type="text" id="' + this.idObj + '-inputSearch" value=""/><div>';
     }
     html += '<div id="' + this.idObj + '-divTable">';
@@ -49,15 +53,16 @@ CustomTable.prototype.draw = function(query = ""){
                 html += '<tr>';
     
     for(var _property in this.getListColumnType()){
-        html += '<td>' + _property + '(' + this.getListColumnType()[_property] + ')' + '</td>';
+        html += '<th>' + _property + '(' + this.getListColumnType()[_property] + ')' + '</th>';
     }
+                    html += '<th>action</th>';
                 html += '</tr>';
             html += '</thead>';
             html += '<tbody>';
     this.getListData().forEach(function(value, key){
         var _isDrawRow = false;
         var _tempHtml = '';
-        _tempHtml += '<tr>';
+        _tempHtml += '<tr id="' + idObj + '-row-' + key + '" data-row="' + key + '">';
             for(var _propertyValue in value){
                 if(typeof (value[_propertyValue]) != "object"){
                     _tempHtml += '<td>' + value[_propertyValue] + '</td>';
@@ -75,29 +80,88 @@ CustomTable.prototype.draw = function(query = ""){
                     }
                 }
             }
+            _tempHtml += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
         _tempHtml += '</tr>';
         if(_isDrawRow){
             html += _tempHtml;
+            totalDrawData++;
         }
     });
             html += '</tbody>'
         html += '<table>';
+        html += totalDrawData + ' of total ' + this.getListData().length + ' records';
     html += '</div>';
     
-    if(query == ""){
+    if(this.countDrawing == 0){
         $('#' + this.idObj).html(html);
-        initEventCustomTable(this);
+        initEventCustom(this);
     }
     else{
         $('#' + this.idObj + '-divTable').html(html);
     }
+    this.countDrawing++;
 };
 
-/*Event custom table*/
-function initEventCustomTable(obj){
+/*Event search table*/
+function initEventCustom(obj){
     $('#' + obj.idObj + '-inputSearch').keyup(function(e){
         var _input = $(this).val();
         obj.draw(_input);       
     });
+    $('#' + obj.idObj).delegate('.btn-event-edit', 'click', function(e){
+        if(obj.isStillEdit){
+            return;
+        }
+        else{
+            obj.isStillEdit = true;
+        }
+        var rowElement = $(this).parent().parent();
+        var row = parseInt(rowElement.attr('data-row'));
+        var oldHtml = rowElement.html();
+        var cellElement = rowElement.children(":first");
+        
+        var html = '';
+        for(var _property in obj.getListColumnType()){
+            var columnType = obj.getListColumnType()[_property];
+            var columnValue = cellElement.html();
+            
+            html += '<td><label>' + columnType + '</label><br><input id="' + _property + '" type="text" value="' + columnValue + '"/></td>';
+            cellElement = cellElement.next();
+        }
+        html += '<td><button id="activeCellSave">save</button><button id="activeCellCancel">cancel</button></td>';
+        rowElement.html(html);
+        
+        $('#activeCellSave').click(function(e){
+            var newData = {};
+            for(var _property in obj.getListColumnType()){
+                newData[_property] = $('#' + _property).val();
+            }
+            obj.getListData()[row] = newData;
+            
+            var html = '';
+            for(var _property in obj.getListColumnType()){
+                html += '<td>' + $('#' + _property).val() + '</td>';
+            }
+            html += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
+            rowElement.html(html);
+            obj.isStillEdit = false;
+        });
+        
+        $('#activeCellCancel').click(function(e){
+            rowElement.html(oldHtml);
+            obj.isStillEdit = false;
+        });
+    });
+    
+    $('#' + obj.idObj).delegate('.btn-event-delete', 'click', function(e){
+        var conf = confirm("Are you sure want to delete?");
+        if(conf == true){
+            var rowElement = $(this).parent().parent();
+            var row = parseInt(rowElement.attr('data-row'));
+            
+            obj.getListData().splice(row, 1);
+            obj.draw();
+        }
+    });
 }
-/*Event custom table*/
+/*Event search table*/
