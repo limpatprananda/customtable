@@ -4,10 +4,11 @@
  * and open the template in the editor.
  */
 
-var CustomTable = function(listColumnType, obj){
-    
+var CustomTable = function(listColumnType, listUrl, obj){
     this.listColumnType = listColumnType;
     this.listData = [];
+    this.listUrl = listUrl;
+    
     this.idObj = obj.attr("id");
     this.countDrawing = 0;
     this.isStillEdit = false;
@@ -26,7 +27,7 @@ CustomTable.prototype.retrieveAll = function(isDraw = true){
     
     var ajax = $.ajax({
         method: 'POST',
-        url: 'api/retrieveall.php',
+        url: _thisObj.listUrl.retrieveUrl,
         data: {}
     });
     ajax.done(function(respone){
@@ -46,6 +47,7 @@ CustomTable.prototype.draw = function(query = ""){
     
     if(this.countDrawing == 0){
         html += '<div id="' + this.idObj + '-divSearch"><input type="text" id="' + this.idObj + '-inputSearch" value=""/><div>';
+        html += '<div><button id="' + this.idObj + '-btnInsert">insert</button></div>';
     }
     html += '<div id="' + this.idObj + '-divTable">';
     html += '<table>';
@@ -53,12 +55,12 @@ CustomTable.prototype.draw = function(query = ""){
                 html += '<tr>';
     
     for(var _property in this.getListColumnType()){
-        html += '<th>' + _property + '(' + this.getListColumnType()[_property] + ')' + '</th>';
+        html += '<th>' + _property + '</th>';
     }
                     html += '<th>action</th>';
                 html += '</tr>';
             html += '</thead>';
-            html += '<tbody>';
+            html += '<tbody id="' + this.idObj + '-tbody">';
     this.getListData().forEach(function(value, key){
         var _isDrawRow = false;
         var _tempHtml = '';
@@ -136,15 +138,31 @@ function initEventCustom(obj){
             for(var _property in obj.getListColumnType()){
                 newData[_property] = $('#' + _property).val();
             }
-            obj.getListData()[row] = newData;
             
-            var html = '';
-            for(var _property in obj.getListColumnType()){
-                html += '<td>' + $('#' + _property).val() + '</td>';
-            }
-            html += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
-            rowElement.html(html);
-            obj.isStillEdit = false;
+            var ajax = $.ajax({
+                url: obj.listUrl.editUrl,
+                method: 'POST',
+                data: { data: JSON.stringify(newData) }
+            });
+            ajax.done(function(msg){
+                msg = JSON.parse(msg);
+                if(msg['code'] == 200){
+                    obj.getListData()[row] = newData;
+                    var html = '';
+                    for(var _property in obj.getListColumnType()){
+                        html += '<td>' + $('#' + _property).val() + '</td>';
+                    }
+                    html += '<td><button class="btn-event-edit">edit</button><button class="btn-event-delete">delete</button></td>';
+                    rowElement.html(html);
+                    obj.isStillEdit = false;
+                }
+                else{
+                    alert("Request failed: " + msg['message'] );
+                }
+            });
+            ajax.fail(function( jqXHR, textStatus ) {
+                alert("Request failed: " + textStatus );
+            });
         });
         
         $('#activeCellCancel').click(function(e){
@@ -152,16 +170,87 @@ function initEventCustom(obj){
             obj.isStillEdit = false;
         });
     });
-    
     $('#' + obj.idObj).delegate('.btn-event-delete', 'click', function(e){
         var conf = confirm("Are you sure want to delete?");
         if(conf == true){
             var rowElement = $(this).parent().parent();
             var row = parseInt(rowElement.attr('data-row'));
             
-            obj.getListData().splice(row, 1);
-            obj.draw();
+            var ajax = $.ajax({
+                url: obj.listUrl.deleteUrl,
+                method: 'POST',
+                data: { data: JSON.stringify(obj.getListData()[row]) }
+            });
+            ajax.done(function(msg){
+                msg = JSON.parse(msg);
+                if(msg['code'] == 200){
+                    obj.getListData().splice(row, 1);
+                    obj.draw();
+                }
+                else{
+                    alert("Request failed: " + msg['message'] );
+                }
+            });
+            ajax.fail(function( jqXHR, textStatus ) {
+                alert("Request failed: " + textStatus );
+            });
         }
+    });
+    $('#' + obj.idObj + '-btnInsert').click(function(e){
+        if(obj.isStillEdit){
+            return;
+        }
+        else{
+            obj.isStillEdit = true;
+        }
+        var tbodyElement = $('#' + obj.idObj + '-tbody');
+        
+        
+        var html = '<tr id="' + obj.idObj + '-insertFields">';
+        for(var _property in obj.getListColumnType()){
+            var columnType = obj.getListColumnType()[_property];
+            html += '<td><label>' + columnType + '</label><br><input id="' + _property + '" type="text" value=""/></td>';
+        }
+        html += '<td><button id="activeCellSave">save</button><button id="activeCellCancel">cancel</button></td></tr>';
+        
+        if(tbodyElement.is(':empty')){
+            tbodyElement.html(html);
+        }
+        else{
+            var rowElement = tbodyElement.children(":first");
+            $(html).insertBefore(rowElement);
+        }
+       
+        $('#activeCellSave').click(function(e){
+            var newData = {};
+            for(var _property in obj.getListColumnType()){
+                newData[_property] = $('#' + _property).val();
+            }
+            
+            var ajax = $.ajax({
+                url: obj.listUrl.insertUrl,
+                method: 'POST',
+                data: { data: JSON.stringify(newData) }
+            });
+            ajax.done(function(msg){
+                msg = JSON.parse(msg);
+                if(msg['code'] == 200){
+                    obj.isStillEdit = false;
+                    obj.retrieveAll();
+                }
+                else{
+                    alert("Request failed: " + msg['message'] );
+                }
+            });
+            ajax.fail(function( jqXHR, textStatus ) {
+                alert("Request failed: " + textStatus );
+            });
+        });
+        
+        $('#activeCellCancel').click(function(e){
+            $('#' + obj.idObj + '-insertFields').remove();
+            obj.isStillEdit = false;
+        });
     });
 }
 /*Event search table*/
