@@ -107,7 +107,7 @@ CustomTable.prototype.draw = function(query = ""){
     
     if(this.countDrawing == 0){
         $('#' + this.idObj).html(html);
-        initEventCustom(this);
+        initDefaultEvent(this);
     }
     else{
         $('#' + this.idObj + '-divTable').html(html);
@@ -116,7 +116,7 @@ CustomTable.prototype.draw = function(query = ""){
 };
 
 /*Event search table*/
-function initEventCustom(obj){
+function initDefaultEvent(obj){
     $('#' + obj.idObj + '-inputSearch').keyup(function(e){
         var _input = $(this).val();
         obj.draw(_input);       
