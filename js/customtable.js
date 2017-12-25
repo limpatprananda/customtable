@@ -4,22 +4,38 @@
  * and open the template in the editor.
  */
 
-var CustomTable = function(listColumnType, listUrl, obj){
+var CustomTable = function(listColumnType, listUrl, idObj){
     this.listColumnType = listColumnType;
-    this.listData = [];
     this.listUrl = listUrl;
+    this.idObj = idObj;
     
-    this.idObj = obj.attr("id");
     this.countDrawing = 0;
     this.isStillEdit = false;
+    
+    this.listData = [];
 };
 
 CustomTable.prototype.getListColumnType = function(){
     return this.listColumnType;
 };
 
-CustomTable.prototype.getListData = function(){
-    return this.listData;
+CustomTable.prototype.getListData = function(query = ""){
+    if(query == ""){
+        return this.listData;
+    }
+    else{
+        var _listData = this.listData.filter(function(value){
+            for(var _propertyValue in value){
+                if(typeof (value[_propertyValue]) != "object"){
+                    var _tempValue = value[_propertyValue].toString();
+                    if(_tempValue.match( new RegExp(query, 'i') )){
+                        return true;
+                    }
+                }
+            }
+        });
+        return _listData;
+    }
 };
 
 CustomTable.prototype.retrieveAll = function(isDraw = true){
@@ -40,70 +56,91 @@ CustomTable.prototype.retrieveAll = function(isDraw = true){
     });
 };
 
-CustomTable.prototype.draw = function(query = ""){
-    var html = '';
-    var idObj = this.idObj;
-    var totalDrawData = 0;
-    
-    if(this.countDrawing == 0){
-        html += '<div class="row">';
+CustomTable.prototype.getTemplateButtonInsert = function(){
+    var html = '<div class="row">';
             html += '<div class="col-sm-8">';
-                html += '<div><button id="' + this.idObj + '-btnInsert" class="btn btn-outline-primary">Insert new</button></div>';
+                html += '<div><button id="{{id}}-btnInsert" class="btn btn-outline-primary">Insert new</button></div>';
             html += '</div>';
             html += '<div class="col-sm-4">';
-                html += '<div id="' + this.idObj + '-divSearch"><input type="text" id="' + this.idObj + '-inputSearch" class="form-control" value="" placeholder="Search..."/></div>';
+                html += '<div id="{{id}}-divSearch"><input type="text" id="{{id}}-inputSearch" class="form-control" value="" placeholder="Search..."/></div>';
             html += '</div>';
         html += '</div>';
         
-    }
-    html += '<br>';
-    html += '<div class="row">';
-    html += '<div id="' + this.idObj + '-divTable" class="col-sm-12">';
-    html += '<table class="table table-bordered">';
-            html += '<thead>';
-                html += '<tr>';
-    
-    for(var _property in this.getListColumnType()){
-        html += '<th>' + _property + '</th>';
-    }
-                    html += '<th>action</th>';
-                html += '</tr>';
-            html += '</thead>';
-            html += '<tbody id="' + this.idObj + '-tbody">';
-    this.getListData().forEach(function(value, key){
-        var _isDrawRow = false;
-        var _tempHtml = '';
-        _tempHtml += '<tr id="' + idObj + '-row-' + key + '" data-row="' + key + '">';
-            for(var _propertyValue in value){
-                if(typeof (value[_propertyValue]) != "object"){
-                    _tempHtml += '<td>' + value[_propertyValue] + '</td>';
-                }
-                else{
-                    _tempHtml += '<td></td>';
-                }
-                
-                if(query == "")
-                    _isDrawRow = true;
-                else if(typeof (value[_propertyValue]) != "object"){
-                    var _tempValue = value[_propertyValue].toString();
-                    if(_tempValue.match( new RegExp(query, 'i') )){
-                        _isDrawRow = true;
-                    }
-                }
-            }
-            _tempHtml += '<td><button class="btn-event-edit btn btn-outline-success">edit</button>&nbsp;';
-            _tempHtml +=      '<button class="btn-event-delete btn btn-outline-danger">delete</button></td>';
-        _tempHtml += '</tr>';
-        if(_isDrawRow){
-            html += _tempHtml;
-            totalDrawData++;
-        }
-    });
-            html += '</tbody>'
+    return html;
+};
+
+CustomTable.prototype.getTemplateTable = function(){
+    var html = '<div class="row">';
+        html += '<div id="{{id}}-divTable" class="col-sm-12">';
+        html += '<table class="table table-bordered">';
+            html += '{{thead}}';
+            html += '{{tbody}}';
         html += '<table>';
-        html += totalDrawData + ' of total ' + this.getListData().length + ' records';
+        html += '{{totalShowRecords}} of total ' + this.getListData().length + ' records';
+        html += '</div>';
     html += '</div>';
-    html += '</div>';
+    return html;
+};
+
+CustomTable.prototype.getTemplateTableThead = function(){
+    var html = '<thead>';
+       html += '<tr>';
+        for(var _property in this.getListColumnType()){
+            html += '<th>' + _property + '</th>';
+        }
+            html += '<th>action</th>';
+        html += '</tr>';
+    html += '</thead>';
+    return html;
+};
+
+CustomTable.prototype.getTemplateTableTbody = function(){
+    var html = '<tbody id="{{id}}-tbody">{{rowBody}}</tbody>';
+    return html;
+};
+
+CustomTable.prototype.getTemplateRowBody = function(value, key){
+    var html = '';
+    html += '<tr id="{{id}}-row-' + key + '" data-row="' + key + '">';
+        for(var _propertyValue in value){
+            if(typeof (value[_propertyValue]) != "object"){
+                html += '<td>' + value[_propertyValue] + '</td>';
+            }
+            else{
+                html += '<td></td>';
+            }
+        }
+        html += '<td><button class="btn-event-edit btn btn-outline-success">edit</button>&nbsp;';
+        html +=      '<button class="btn-event-delete btn btn-outline-danger">delete</button></td>';
+    html += '</tr>';
+    return html;
+};
+
+CustomTable.prototype.draw = function(query = ""){
+    var totalShowRecords = 0;
+    var _object = this;
+    
+    var rowBody = '';
+    this.getListData(query).forEach(function(value, key){
+        rowBody += _object.getTemplateRowBody(value, key);
+        totalShowRecords++;
+    });
+    
+    var table = this.getTemplateTable();
+    var thead = this.getTemplateTableThead();
+    var tbody = this.getTemplateTableTbody();
+    var buttonAdd = '';
+    
+    if(this.countDrawing == 0){
+         buttonAdd = this.getTemplateButtonInsert();
+    }
+    tbody = tbody.replace(/{{rowBody}}/g, rowBody);
+    table = table.replace(/{{thead}}/g, thead);
+    table = table.replace(/{{tbody}}/g, tbody);
+    table = table.replace(/{{totalShowRecords}}/g, totalShowRecords);
+    
+    var html = buttonAdd + table;
+    html = html.replace(/{{id}}/g, this.idObj);
     
     if(this.countDrawing == 0){
         $('#' + this.idObj).html(html);
