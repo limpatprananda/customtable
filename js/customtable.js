@@ -21,11 +21,17 @@ CustomTable.prototype.init = function(){
     
     this.retrieveAll();
     var obj = this;
-    $('#' + this.idObj + '-inputSearch').keyup(function(e){
+    
+    this.parentObjectElement = $('#' + this.idObj);
+    this.btnInputSearch = $('#' + this.idObj + '-inputSearch');
+    this.btnInsert = $('#' + this.idObj + '-btnInsert');
+    
+    this.btnInputSearch.keyup(function(e){
         var input = $(this).val();
         obj.draw(input);       
     });
-    $('#' + this.idObj + '-btnInsert').click(function(e){
+    
+    this.btnInsert.click(function(e){
         if(obj.isStillEdit){
             return;
         }
@@ -75,7 +81,7 @@ CustomTable.prototype.init = function(){
             obj.isStillEdit = false;
         });
     });
-    $('#' + this.idObj).delegate('.btn-event-edit', 'click', function(e){
+    this.parentObjectElement.delegate('.btn-event-edit', 'click', function(e){
         if(obj.isStillEdit){
             return;
         }
@@ -98,7 +104,7 @@ CustomTable.prototype.init = function(){
             ajax.done(function(msg){
                 msg = JSON.parse(msg);
                 if(msg['code'] == 200){
-                    obj.getListData()[row] = newData;
+                    obj.listData[row] = newData;
                     rowElement.html(obj.getTemplateContentRow(newData, row));
                     obj.isStillEdit = false;
                 }
@@ -116,7 +122,7 @@ CustomTable.prototype.init = function(){
             obj.isStillEdit = false;
         });
     });
-    $('#' + this.idObj).delegate('.btn-event-delete', 'click', function(e){
+    this.parentObjectElement.delegate('.btn-event-delete', 'click', function(e){
         var conf = confirm("Are you sure want to delete?");
         if(conf == true){
             var rowElement = $(this).parent().parent();
@@ -130,7 +136,7 @@ CustomTable.prototype.init = function(){
             ajax.done(function(msg){
                 msg = JSON.parse(msg);
                 if(msg['code'] == 200){
-                    obj.getListData().splice(row, 1);
+                    obj.listData.splice(row, 1);
                     obj.draw();
                 }
                 else{
@@ -150,22 +156,25 @@ CustomTable.prototype.getListColumnType = function(){
 };
 
 CustomTable.prototype.getListData = function(query = ""){
-    if(query == ""){
-        return this.listData;
-    }
-    else{
-        var _listData = this.listData.filter(function(value){
+    var _listData = this.listData.filter(function(value, key){
+        if(query == ""){
+            value.row = key;
+            return true;
+        }
+        else{
             for(var _propertyValue in value){
                 if(typeof (value[_propertyValue]) != "object"){
                     var _tempValue = value[_propertyValue].toString();
                     if(_tempValue.match( new RegExp(query, 'i') )){
+                        value.row = key;
                         return true;
                     }
                 }
             }
-        });
-        return _listData;
-    }
+        }
+        
+    });
+    return _listData;
 };
 
 CustomTable.prototype.retrieveAll = function(isDraw = true){
@@ -254,11 +263,13 @@ CustomTable.prototype.getTemplateRowBody = function(value, key){
 CustomTable.prototype.getTemplateContentRow = function(value, key){
     var html = '';
     for(var _propertyValue in value){
-        if(typeof (value[_propertyValue]) != "object"){
-            html += '<td>' + value[_propertyValue] + '</td>';
-        }
-        else{
-            html += '<td></td>';
+        if(_propertyValue != "row"){
+            if(typeof (value[_propertyValue]) != "object"){
+                html += '<td>' + value[_propertyValue] + '</td>';
+            }
+            else{
+                html += '<td></td>';
+            }
         }
     }
     html += '<td><button class="btn-event-edit btn btn-outline-success">edit</button>&nbsp;';
@@ -292,8 +303,8 @@ CustomTable.prototype.draw = function(query = ""){
     var _object = this;
     
     var rowBody = '';
-    this.getListData(query).forEach(function(value, key){
-        rowBody += _object.getTemplateRowBody(value, key);
+    this.getListData(query).forEach(function(value){
+        rowBody += _object.getTemplateRowBody(value, value.row);
         totalShowRecords++;
     });
     
